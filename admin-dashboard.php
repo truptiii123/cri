@@ -214,9 +214,9 @@ $totalRevenue = $stmt->fetch()['total_revenue'] ?? 0;
                                 <th onclick="sortTable(5)">Status <i class="fas fa-sort"></i></th>
                                 <th onclick="sortTable(6)">Agent <i class="fas fa-sort"></i></th>
                                 <th onclick="sortTable(7)">Date <i class="fas fa-sort"></i></th>
-                                <th>Remarks</th>
-                                <th>Delivery Info</th>
-                                <th>Actions</th>
+                                <th onclick="sortTable(8)">Remarks <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable(9)">Delivery <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable(10)">Actions <i class="fas fa-cog"></i></th>
                             </tr>
                         </thead>
                         <tbody id="couriersTableBody">

@@ -38,11 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $input = json_decode(file_get_contents('php://input'), true);
     
     try {
+        $party_name = $input['party_name'] ?? '';
+        
         // Generate courier ID using first 2 words of party name + 4 random digits
-        $partyWords = explode(' ', trim($input['party_name']));
+        $partyWords = explode(' ', trim($party_name));
         $prefix = '';
         for ($i = 0; $i < min(2, count($partyWords)); $i++) {
             $prefix .= strtoupper(substr($partyWords[$i], 0, 2));
+        }
+        if (empty($prefix)) {
+            $prefix = 'CID';
         }
         $courier_id = $prefix . rand(1000, 9999);
         
@@ -52,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         
         $stmt->execute([
             $courier_id,
-            $input['party_name'],
+            $party_name,
             $input['mobile'],
             $input['address'],
             $input['from_city'],

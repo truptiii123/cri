@@ -104,7 +104,16 @@ function setupMobileMenu() {
         
         // Close menu when clicking outside
         document.addEventListener('click', function(e) {
-            if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
+            if (!hamburger.contains(e.target) && !navMenu.contains(e.target) && navMenu.classList.contains('active')) {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Close menu on window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
                 hamburger.classList.remove('active');
                 navMenu.classList.remove('active');
                 document.body.style.overflow = '';
@@ -347,6 +356,7 @@ function displayTrackingResult(data) {
                 <p><strong>Expected Delivery:</strong> ${data.delivery_date}</p>
                 ${data.delivery_person ? `<p><strong>Delivery Person:</strong> ${data.delivery_person}</p>` : ''}
             </div>
+            ${data.tracking_history && data.tracking_history.length > 0 ? `
             <div class="tracking-history">
                 <h4>Tracking History</h4>
                 <div class="timeline">
@@ -362,6 +372,7 @@ function displayTrackingResult(data) {
                     `).join('')}
                 </div>
             </div>
+            ` : '<p style="text-align: center; color: #6b7280; margin-top: 1rem;">No tracking history available yet.</p>'}
         </div>
     `;
     
@@ -482,93 +493,114 @@ function logout() {
 const additionalStyles = `
     .tracking-info {
         text-align: left;
+        max-width: 100%;
     }
     
     .tracking-details {
         margin: 1rem 0;
         padding: 1rem;
-        background: rgba(248, 250, 252, 0.9);
-        backdrop-filter: blur(10px);
-        border-radius: 10px;
-        border: 1px solid rgba(102, 126, 234, 0.2);
+        background: #f9fafb;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
     }
     
     .tracking-details p {
         margin: 0.5rem 0;
-        color: #1f2937;
+        color: #374151;
+        font-size: 0.875rem;
     }
     
-    .status {
+    .tracking-details .status-badge {
         padding: 0.25rem 0.5rem;
-        border-radius: 5px;
-        font-size: 0.9rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
         font-weight: 600;
-    }
-    
-    .status.pending {
-        background: #f59e0b;
-        color: #fff;
-    }
-    
-    .status.in_transit {
-        background: #3b82f6;
-        color: #fff;
-    }
-    
-    .status.delivered {
-        background: #10b981;
-        color: #fff;
     }
     
     .timeline {
         position: relative;
-        padding-left: 2rem;
+        padding-left: 1.5rem;
+        margin-top: 1rem;
     }
     
     .timeline::before {
         content: '';
         position: absolute;
-        left: 0.5rem;
+        left: 0.375rem;
         top: 0;
         bottom: 0;
         width: 2px;
-        background: linear-gradient(to bottom, #667eea, #764ba2);
+        background: #e5e7eb;
     }
     
     .timeline-item {
         position: relative;
-        margin: 1rem 0;
+        margin: 0.75rem 0;
     }
     
     .timeline-dot {
         position: absolute;
-        left: -2rem;
-        top: 0.5rem;
-        width: 1rem;
-        height: 1rem;
+        left: -1.5rem;
+        top: 0.375rem;
+        width: 0.75rem;
+        height: 0.75rem;
         border-radius: 50%;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        border: 3px solid #fff;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        background: #2563eb;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .timeline-content {
-        padding: 0.5rem 1rem;
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border-radius: 8px;
-        margin-left: 0.5rem;
-        border: 1px solid rgba(102, 126, 234, 0.1);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 0.75rem;
+        background: #ffffff;
+        border-radius: 0.5rem;
+        margin-left: 0.375rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
     .timeline-content p {
-        color: #1f2937;
+        color: #374151;
         margin: 0.25rem 0;
+        font-size: 0.875rem;
     }
     
     .timeline-content small {
         color: #6b7280;
+        font-size: 0.75rem;
+    }
+    
+    @media (max-width: 768px) {
+        .tracking-details {
+            padding: 0.75rem;
+        }
+        
+        .tracking-details p {
+            font-size: 0.8rem;
+        }
+        
+        .timeline {
+            padding-left: 1rem;
+        }
+        
+        .timeline-dot {
+            left: -1rem;
+            width: 0.5rem;
+            height: 0.5rem;
+        }
+        
+        .timeline-content {
+            padding: 0.5rem;
+            margin-left: 0.25rem;
+        }
+        
+        .timeline-content p {
+            font-size: 0.75rem;
+        }
+        
+        .timeline-content small {
+            font-size: 0.7rem;
+        }
     }
 `;
 

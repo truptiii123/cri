@@ -129,29 +129,13 @@ function populateCityDropdown(selectId) {
 }
 
 function setupCitySearch(inputId) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
+    const searchableSelect = document.querySelector(`#${inputId}`).closest('.searchable-select');
+    if (!searchableSelect) return;
     
-    // Convert select to searchable input
-    const select = input;
-    const wrapper = document.createElement('div');
-    wrapper.className = 'searchable-select';
+    const searchInput = searchableSelect.querySelector('.city-search-input');
+    const dropdown = searchableSelect.querySelector('.city-dropdown');
     
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.className = 'city-search-input';
-    searchInput.placeholder = 'Search and select city...';
-    searchInput.name = select.name;
-    searchInput.required = select.required;
-    
-    const dropdown = document.createElement('div');
-    dropdown.className = 'city-dropdown';
-    dropdown.style.display = 'none';
-    
-    select.parentNode.insertBefore(wrapper, select);
-    wrapper.appendChild(searchInput);
-    wrapper.appendChild(dropdown);
-    select.remove();
+    if (!searchInput || !dropdown) return;
     
     searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase();
@@ -162,7 +146,7 @@ function setupCitySearch(inputId) {
         
         if (query.length > 0 && filteredCities.length > 0) {
             dropdown.innerHTML = filteredCities.slice(0, 10).map(city => 
-                `<div class="city-option" onclick="selectCity('${inputId}', '${city.city_name}')">${city.city_name}, ${city.state}</div>`
+                `<div class="city-option" onclick="selectCity('${inputId}', '${city.city_name.replace(/'/g, "\\'")}')">${city.city_name}, ${city.state}</div>`
             ).join('');
             dropdown.style.display = 'block';
         } else {
@@ -173,15 +157,36 @@ function setupCitySearch(inputId) {
     searchInput.addEventListener('blur', function() {
         setTimeout(() => dropdown.style.display = 'none', 200);
     });
+    
+    searchInput.addEventListener('focus', function() {
+        if (this.value.length > 0) {
+            const query = this.value.toLowerCase();
+            const filteredCities = cities.filter(city => 
+                city.city_name.toLowerCase().includes(query) ||
+                city.state.toLowerCase().includes(query)
+            );
+            
+            if (filteredCities.length > 0) {
+                dropdown.innerHTML = filteredCities.slice(0, 10).map(city => 
+                    `<div class="city-option" onclick="selectCity('${inputId}', '${city.city_name.replace(/'/g, "\\'")}')">${city.city_name}, ${city.state}</div>`
+                ).join('');
+                dropdown.style.display = 'block';
+            }
+        }
+    });
 }
 
 function selectCity(inputId, cityName) {
-    const wrapper = document.querySelector(`#${inputId}`).closest('.searchable-select');
-    const input = wrapper.querySelector('.city-search-input');
-    const dropdown = wrapper.querySelector('.city-dropdown');
+    const searchableSelect = document.querySelector(`#${inputId}`).closest('.searchable-select');
+    if (!searchableSelect) return;
     
-    input.value = cityName;
-    dropdown.style.display = 'none';
+    const input = searchableSelect.querySelector('.city-search-input');
+    const dropdown = searchableSelect.querySelector('.city-dropdown');
+    
+    if (input && dropdown) {
+        input.value = cityName;
+        dropdown.style.display = 'none';
+    }
 }
 
 // Navigation
@@ -213,21 +218,26 @@ async function handleAddCourier(e) {
     
     const formData = new FormData(e.target);
     
-    // Get city values from searchable inputs
-    const fromCityInput = document.querySelector('#from_city').closest('.searchable-select')?.querySelector('.city-search-input');
-    const toCityInput = document.querySelector('#to_city').closest('.searchable-select')?.querySelector('.city-search-input');
+    // Get city values from search inputs
+    const fromCityInput = document.querySelector('#from_city');
+    const toCityInput = document.querySelector('#to_city');
     
     const courierData = {
-        to_party_name: formData.get('to_party_name'),
-        from_party_name: formData.get('from_party_name'),
+        party_name: formData.get('to_party_name') || formData.get('from_party_name'),
         mobile: formData.get('mobile'),
         address: formData.get('address'),
-        from_city: fromCityInput ? fromCityInput.value : formData.get('from_city'),
-        to_city: toCityInput ? toCityInput.value : formData.get('to_city'),
+        from_city: fromCityInput ? fromCityInput.value : '',
+        to_city: toCityInput ? toCityInput.value : '',
         amount: formData.get('amount') || 0,
         delivery_date: formData.get('delivery_date'),
         remarks: formData.get('remarks')
     };
+    
+    // Validate required fields
+    if (!courierData.party_name || !courierData.from_city || !courierData.to_city) {
+        showAlert('Please fill all required fields including cities', 'error');
+        return;
+    }
     
     try {
         const response = await fetch('api/agent-couriers.php', {
@@ -244,15 +254,25 @@ async function handleAddCourier(e) {
             showAlert('Courier added successfully! Courier ID: ' + result.courier_id, 'success');
             lastCourierId = result.courier_id;
             
-            // Show download receipt button
-            const downloadBtn = document.getElementById('downloadReceiptBtn');
-            downloadBtn.style.display = 'inline-flex';
+            // Show download receipt section
+            const downloadSection = document.getElementById('downloadReceiptSection');
+            if (downloadSection) {
+                downloadSection.style.display = 'block';
+            }
             
             e.target.reset();
             
             // Reset city search inputs
-            if (fromCityInput) fromCityInput.value = '';
-            if (toCityInput) toCityInput.value = '';
+            if (fromCityInput) {
+                fromCityInput.value = '';
+                const fromDropdown = fromCityInput.closest('.searchable-select')?.querySelector('.city-dropdown');
+                if (fromDropdown) fromDropdown.style.display = 'none';
+            }
+            if (toCityInput) {
+                toCityInput.value = '';
+                const toDropdown = toCityInput.closest('.searchable-select')?.querySelector('.city-dropdown');
+                if (toDropdown) toDropdown.style.display = 'none';
+            }
             
             loadRecentCouriers();
         } else {
@@ -279,6 +299,14 @@ function downloadReceipt() {
     document.body.removeChild(a);
     
     showAlert('Receipt download started!', 'success');
+    
+    // Hide the download section after download
+    const downloadSection = document.getElementById('downloadReceiptSection');
+    if (downloadSection) {
+        setTimeout(() => {
+            downloadSection.style.display = 'none';
+        }, 3000);
+    }
 }
 
 // Load Recent Couriers
@@ -318,8 +346,7 @@ async function loadMyCouriers() {
         tbody.innerHTML = couriers.map(courier => `
             <tr>
                 <td>${courier.courier_id}</td>
-                <td>${courier.to_party_name || courier.party_name}</td>
-                <td>${courier.from_party_name || courier.party_name}</td>
+                <td>${courier.party_name}</td>
                 <td>${courier.mobile}</td>
                 <td>${courier.from_city}</td>
                 <td>${courier.to_city}</td>

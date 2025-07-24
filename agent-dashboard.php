@@ -175,15 +175,17 @@ $todayBusiness = $stmt->fetch()['today_business'] ?? 0;
                             </div>
                             <div class="form-group">
                                 <label for="to_city">To City *</label>
-                                <select id="to_city" name="to_city" required>
-                                    <option value="">Select City</option>
-                                </select>
+                                <div class="searchable-select">
+                                    <input type="text" id="to_city" name="to_city" class="city-search-input" placeholder="Search and select city..." required>
+                                    <div class="city-dropdown" style="display: none;"></div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="from_city">From City *</label>
-                                <select id="from_city" name="from_city" required>
-                                    <option value="">Select City</option>
-                                </select>
+                                <div class="searchable-select">
+                                    <input type="text" id="from_city" name="from_city" class="city-search-input" placeholder="Search and select city..." required>
+                                    <div class="city-dropdown" style="display: none;"></div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="amount">Amount (₹)</label>
@@ -201,6 +203,13 @@ $todayBusiness = $stmt->fetch()['today_business'] ?? 0;
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Add Courier
                         </button>
+                        <div class="receipt-option" id="downloadReceiptSection" style="display: none;">
+                            <h4>📄 Download Receipt</h4>
+                            <p>Your courier has been added successfully! Download the receipt for your records.</p>
+                            <button type="button" class="btn btn-success" onclick="downloadReceipt()">
+                                <i class="fas fa-download"></i> Download Receipt
+                            </button>
+                        </div>
                     </form>
                 </div>
             </section>
@@ -227,8 +236,7 @@ $todayBusiness = $stmt->fetch()['today_business'] ?? 0;
                         <thead>
                             <tr>
                                 <th>Courier ID</th>
-                                <th>To Party Name</th>
-                                <th>From Party Name</th>
+                                <th>Party Name</th>
                                 <th>Mobile</th>
                                 <th>From</th>
                                 <th>To</th>

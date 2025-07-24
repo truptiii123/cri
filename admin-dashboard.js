@@ -272,16 +272,16 @@ async function loadCouriers() {
                 <td><span class="status-badge ${courier.status}">${courier.status}</span></td>
                 <td>${courier.agent_name || 'N/A'}</td>
                 <td>${new Date(courier.created_at).toLocaleDateString()}</td>
-                <td>${courier.remarks || 'N/A'}</td>
+                <td><span title="${courier.remarks || 'No remarks'}">${courier.remarks ? (courier.remarks.length > 30 ? courier.remarks.substring(0, 30) + '...' : courier.remarks) : 'N/A'}</span></td>
                 <td>
                     ${courier.delivery_person ? `
                         <div class="delivery-info">
-                            <strong>${courier.delivery_person}</strong>
+                            <div><strong>${courier.delivery_person}</strong></div>
                             ${courier.delivery_photo ? `
-                                <br><img src="uploads/delivery_photos/${courier.delivery_photo}" 
+                                <img src="uploads/delivery_photos/${courier.delivery_photo}" 
                                      alt="Delivery Photo" class="delivery-photo-thumb" 
                                      onclick="viewDeliveryPhoto('${courier.delivery_photo}')">
-                                <button class="action-btn delete" onclick="deleteDeliveryPhoto('${courier.courier_id}')" title="Delete Photo">
+                                <button class="action-btn delete" onclick="deleteDeliveryPhoto('${courier.courier_id}')" title="Delete Photo" style="margin-top: 4px;">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             ` : ''}
@@ -292,14 +292,18 @@ async function loadCouriers() {
                     <button class="action-btn edit" onclick="viewCourier('${courier.courier_id}')">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="action-btn delete" onclick="deleteCourier('${courier.courier_id}')">
-                        <i class="fas fa-trash"></i>
+                    <button class="action-btn view" onclick="downloadCourierReceipt('${courier.courier_id}')" title="Download Receipt">
+                        <i class="fas fa-download"></i>
                     </button>
                 </td>
             </tr>
         `).join('');
     } catch (error) {
         console.error('Failed to load couriers:', error);
+        const tbody = document.getElementById('couriersTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #ef4444;">Failed to load couriers. Please refresh the page.</td></tr>';
+        }
     }
 }
 
@@ -405,13 +409,22 @@ function viewDeliveryPhoto(filename) {
     modal.className = 'modal';
     modal.style.display = 'block';
     modal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 90vw; max-height: 90vh;">
             <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
             <h2>Delivery Photo</h2>
-            <img src="uploads/delivery_photos/${filename}" alt="Delivery Photo" style="width: 100%; border-radius: 8px;">
+            <div style="text-align: center;">
+                <img src="uploads/delivery_photos/${filename}" alt="Delivery Photo" style="max-width: 100%; max-height: 70vh; border-radius: 8px; object-fit: contain;">
+            </div>
         </div>
     `;
     document.body.appendChild(modal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 async function deleteDeliveryPhoto(courierId) {
@@ -781,6 +794,19 @@ function viewCourier(courierId) {
     openUpdateCourierModal();
 }
 
+function downloadCourierReceipt(courierId) {
+    const url = `api/generate-receipt.php?courier_id=${courierId}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `receipt_${courierId}.txt`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    showAlert('Receipt download started!', 'success');
+}
+
 // Enhanced mobile sidebar toggle
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
@@ -795,6 +821,13 @@ function toggleSidebar() {
     
     sidebar.classList.toggle('active');
     overlay.classList.toggle('active');
+    
+    // Prevent body scroll when sidebar is open on mobile
+    if (sidebar.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
 }
 
 // Utility Functions
