@@ -1,0 +1,3 @@
+courier_services  database name creat
+Admin: username admin, password admin123
+Sample Agent: username agent1, password admin123
